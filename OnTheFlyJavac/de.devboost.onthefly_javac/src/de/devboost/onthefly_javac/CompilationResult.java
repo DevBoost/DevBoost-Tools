@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2006-2012
+ * Copyright (c) 2006-2013
  * Software Technology Group, Dresden University of Technology
  * DevBoost GmbH, Berlin, Amtsgericht Charlottenburg, HRB 140026
  * 
@@ -26,6 +26,7 @@ import de.devboost.onthefly_javac.internal.ByteArrayJavaFileObject;
 public class CompilationResult {
 
     private Map<String, ByteArrayJavaFileObject> store = new LinkedHashMap<String, ByteArrayJavaFileObject>();
+    
     private DiagnosticCollector<JavaFileObject> diagnosticsCollector = new DiagnosticCollector<JavaFileObject>();
 	private boolean success;
 
@@ -58,13 +59,16 @@ public class CompilationResult {
 	}
 
 	public Class<?> loadClass(String className) throws ClassNotFoundException {
-		final byte[] bytes = getByteCode(className);
-		
-		ClassLoader _classLoader = new ClassLoader() {
+		// we do use 'null' as parent class loaded to avoid the classes are
+		// loaded using the system class loader. this ensure that we load only
+		// classes which were explicitly compiled in memory.
+		ClassLoader _classLoader = new ClassLoader(null) {
 			
 			@Override
 			protected Class<?> findClass(String name)
 					throws ClassNotFoundException {
+				
+				byte[] bytes = getByteCode(name);
 				return defineClass(name, bytes, 0, bytes.length);
 			}
 		};
