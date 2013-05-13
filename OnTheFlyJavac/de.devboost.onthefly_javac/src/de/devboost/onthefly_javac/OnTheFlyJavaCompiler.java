@@ -62,46 +62,46 @@ public class OnTheFlyJavaCompiler {
 	private void doCompile(String qualifiedClassName, String sourceCode,
 			CompilationResult result) {
 		
-		System.out.println("OnTheFlyJavaCompiler.doCompile(" + qualifiedClassName + ")");
-		/*Creating dynamic java source code file object*/
+		// Creating dynamic java source code file object
         SimpleJavaFileObject fileObject = new DynamicJavaSourceCodeObject(qualifiedClassName, sourceCode);
         JavaFileObject javaFileObjects[] = new JavaFileObject[]{fileObject} ;
  
-        /*Instantiating the java compiler*/
+        // Instantiating the java compiler
         JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
  
-        /**
-         * Retrieving the standard file manager from compiler object, which is used to provide
-         * basic building block for customizing how a compiler reads and writes to files.
-         *
-         * The same file manager can be reopened for another compiler task.
-         * Thus we reduce the overhead of scanning through file system and jar files each time
-         */
+		// Retrieving the standard file manager from compiler object, which is
+		// used to provide basic building block for customizing how a compiler
+		// reads and writes to files.
+		//
+		// The same file manager can be reopened for another compiler task.
+		// Thus we reduce the overhead of scanning through file system and jar
+		// files each time
     	DiagnosticCollector<JavaFileObject> diagnostics = result.getDiagnosticsCollector();
     	StandardJavaFileManager fileMan =
         		compiler.getStandardFileManager(diagnostics, null, null);
         ByteJavaFileManager<StandardJavaFileManager> jfm =
         		new ByteJavaFileManager<StandardJavaFileManager>(fileMan, result.getStore());
         
-        /* Prepare a list of compilation units (java source code file objects) to input to compilation task*/
+        // Prepare a list of compilation units (java source code file objects) to input to compilation task
         Iterable<? extends JavaFileObject> compilationUnits = Arrays.asList(javaFileObjects);
  
-        /*Prepare any compilation options to be used during compilation*/
-        //In this example, we are asking the compiler to place the output files under bin folder.
+        // Prepare any compilation options to be used during compilation.
+        // In this example, we are asking the compiler to place the output files under bin folder.
         String[] compileOptions = new String[]{} ;
         Iterable<String> compilationOptions = Arrays.asList(compileOptions);
  
-        /*Create a compilation task from compiler by passing in the required input objects prepared above*/
+        // Create a compilation task from compiler by passing in the required input objects prepared above
         CompilationTask compilerTask = compiler.getTask(null, jfm, diagnostics, compilationOptions, null, compilationUnits) ;
  
-        //Perform the compilation by calling the call method on compilerTask object.
+        // Perform the compilation by calling the call method on compilerTask object.
         boolean status = compilerTask.call();
         result.setSuccess(status);
 
+    	// Close the file manager
         try {
-            jfm.close() ;//Close the file manager
+            jfm.close();
         } catch (IOException e) {
-        	// TODO
+        	// TODO Handle exception
             e.printStackTrace();
         }
 	}
