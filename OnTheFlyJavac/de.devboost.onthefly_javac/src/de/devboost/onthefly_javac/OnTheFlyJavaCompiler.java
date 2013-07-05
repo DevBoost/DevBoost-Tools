@@ -17,8 +17,11 @@ package de.devboost.onthefly_javac;
  
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Map;
 
+import javax.annotation.processing.Processor;
 import javax.tools.DiagnosticCollector;
 import javax.tools.JavaCompiler;
 import javax.tools.JavaCompiler.CompilationTask;
@@ -42,10 +45,17 @@ public class OnTheFlyJavaCompiler {
      * Compiles a set of Java classes in one batch.
      */
     public CompilationResult compile(Map<String, String> qualifiedClassNameToSourceCodeMap) {
+        return compile(qualifiedClassNameToSourceCodeMap, Collections.<Processor>emptySet());
+    }
+
+    /**
+     * Compiles a set of Java classes in one batch and applies the given processors.
+     */
+    public CompilationResult compile(Map<String, String> qualifiedClassNameToSourceCodeMap, Collection<Processor> processors) {
     	CompilationResult result = new CompilationResult();
     	for (String className : qualifiedClassNameToSourceCodeMap.keySet()) {
     		String sourceCode = qualifiedClassNameToSourceCodeMap.get(className);
-            doCompile(className, sourceCode, result);
+            doCompile(className, sourceCode, result, processors);
 		}
         return result;
     }
@@ -54,13 +64,20 @@ public class OnTheFlyJavaCompiler {
      * Compiles a single Java class in memory.
      */
     public CompilationResult compile(String qualifiedClassName, String sourceCode) {
+        return compile(qualifiedClassName, sourceCode, Collections.<Processor>emptySet());
+    }
+
+    /**
+     * Compiles a single Java class in memory and applies the given processors.
+     */
+    public CompilationResult compile(String qualifiedClassName, String sourceCode, Collection<Processor> processors) {
     	CompilationResult result = new CompilationResult();
-        doCompile(qualifiedClassName, sourceCode, result);
+        doCompile(qualifiedClassName, sourceCode, result, processors);
         return result;
     }
 
 	private void doCompile(String qualifiedClassName, String sourceCode,
-			CompilationResult result) {
+			CompilationResult result, Collection<Processor> processors) {
 		
 		// Creating dynamic java source code file object
         SimpleJavaFileObject fileObject = new DynamicJavaSourceCodeObject(qualifiedClassName, sourceCode);
@@ -93,6 +110,7 @@ public class OnTheFlyJavaCompiler {
         // Create a compilation task from compiler by passing in the required input objects prepared above
         CompilationTask compilerTask = compiler.getTask(null, jfm, diagnostics, compilationOptions, null, compilationUnits) ;
  
+        compilerTask.setProcessors(processors);
         // Perform the compilation by calling the call method on compilerTask object.
         boolean status = compilerTask.call();
         result.setSuccess(status);
