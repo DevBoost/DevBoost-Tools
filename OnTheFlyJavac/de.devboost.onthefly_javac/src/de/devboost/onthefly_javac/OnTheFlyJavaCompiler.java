@@ -20,6 +20,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
+import java.util.Set;
 
 import javax.annotation.processing.Processor;
 import javax.tools.DiagnosticCollector;
@@ -53,10 +54,18 @@ public class OnTheFlyJavaCompiler {
      */
     public CompilationResult compile(Map<String, String> qualifiedClassNameToSourceCodeMap, Collection<Processor> processors) {
     	CompilationResult result = new CompilationResult();
-    	for (String className : qualifiedClassNameToSourceCodeMap.keySet()) {
+    	Set<String> classNames = qualifiedClassNameToSourceCodeMap.keySet();
+    	JavaFileObject[] javaFileObjects = new JavaFileObject[classNames.size()];
+    	int index = 0;
+		for (String className : classNames) {
     		String sourceCode = qualifiedClassNameToSourceCodeMap.get(className);
-            doCompile(className, sourceCode, result, processors);
+    		
+    		// Create dynamic java source code file object
+            SimpleJavaFileObject fileObject = new DynamicJavaSourceCodeObject(className, sourceCode);
+            javaFileObjects[index++] = fileObject;
 		}
+		
+        doCompile(result, processors, javaFileObjects);
         return result;
     }
 
@@ -81,9 +90,14 @@ public class OnTheFlyJavaCompiler {
 		
 		// Creating dynamic java source code file object
         SimpleJavaFileObject fileObject = new DynamicJavaSourceCodeObject(qualifiedClassName, sourceCode);
-        JavaFileObject javaFileObjects[] = new JavaFileObject[]{fileObject} ;
+        JavaFileObject javaFileObjects[] = new JavaFileObject[] {fileObject} ;
  
-        // Instantiating the java compiler
+        doCompile(result, processors, javaFileObjects);
+	}
+
+	private void doCompile(CompilationResult result,
+			Collection<Processor> processors, JavaFileObject[] javaFileObjects) {
+		// Instantiating the java compiler
         JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
  
 		// Retrieving the standard file manager from compiler object, which is
